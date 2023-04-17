@@ -2,23 +2,26 @@
 
 const Booking = require("../models/Booking");
 
+// bookRoom route is working fine
 const bookRoom = async (req, res) => {
-    const { email, roomType, startTime, endTime } = req.body;
+    const { email, roomType, date, startTime, endTime } = req.body;
 
     // Check if the requested room is available for the requested time period
     const isAvailable = await Booking.isRoomAvailable(
         roomType,
+        date,
         startTime,
         endTime
     );
 
-    console.log('running')
+    console.log(req.body)
+    console.log('bhai yha tak to phochgye')
 
-    // if (!isAvailable) {
-    //     return res.status(400).json({
-    //         error: "The requested room is not available for the requested time period",
-    //     });
-    // }
+    if (!isAvailable) {
+        return res.status(400).json({
+            error: "The requested room is not available for the requested time period",
+        });
+    }
 
     // Calculate the total price based on the room type and duration
     const duration = (endTime - startTime) / 3600000; // convert milliseconds to hours
@@ -39,14 +42,17 @@ const bookRoom = async (req, res) => {
 
     // Create a new booking model
 
-    // id bejhni hai frontend me
     const booking = new Booking({
-        email,
-        roomType,
-        startTime,
-        endTime,
+        email: email,
+        roomType: roomType,
+        date: date,
+        startTime: startTime,
+        endTime: endTime,
         totalPrice: price,
     });
+
+    console.log(booking)
+    console.log("end of book room")
 
     try {
         await booking.save();
@@ -60,7 +66,7 @@ const bookRoom = async (req, res) => {
 };
 
 const updateBooking = async (req, res) => {
-    const { bookingId, email, roomType, startTime, endTime } = req.body;
+    const { bookingId, email, roomType, date, startTime, endTime } = req.body;
 
     try {
         // Check if the booking exists
@@ -69,9 +75,10 @@ const updateBooking = async (req, res) => {
             return res.status(400).json({ error: "Booking not found" });
         }
 
-        // Check if the requested room type is available for the requested time period
+        // Check if the requested room type is available for the requested time period on that day
         const isAvailable = await Booking.isRoomAvailable(
             roomType,
+            date,
             startTime,
             endTime,
             bookingId
@@ -86,11 +93,13 @@ const updateBooking = async (req, res) => {
         // Update the booking details
         booking.email = email;
         booking.roomType = roomType;
+        booking.date = date;
         booking.startTime = startTime;
         booking.endTime = endTime;
 
         // Calculate the new total price based on the updated booking details
         const duration = (endTime - startTime) / 3600000; // convert milliseconds to hours
+
         switch (roomType) {
             case "A":
                 booking.totalPrice = duration * 100;
@@ -132,14 +141,24 @@ const getRefundAmount = (startTime, endTime, price) => {
 
 const deleteBooking = async (req, res, next) => {
     try {
-        const booking = await Booking.findById(req.params.bookingId);
+        // we are passing email instead id
+        // find if booking exists with current email
+        const booking = await Booking.findOne({ email: req.params.id });
+        // const booking = await Booking.findById(req.params.id);
 
         if (!booking) {
             return res.status(404).json({ error: "Booking not found" });
         }
 
         const startTime = new Date(booking.startTime);
-        const now = new Date();
+        const currentTime = now.getTime();
+        const bookingDate = new Date(booking.date);
+        const Today = new Date();
+
+        
+        if(bookingDate < Today){
+            return res.status(400).json({ error: "Cannot cancel past bookings" });
+        }
 
         if (startTime > now) {
             const refundAmount = getRefundAmount(
@@ -188,7 +207,9 @@ const filterBookings = async (req, res) => {
     return res.json(bookings);
 };
 
+// this is working
 const getAllBookings = async (req, res) => {
+    console.log("get all bookings")
     try {
         const { roomType, roomNumber, startDate, endDate } = req.query;
 
@@ -222,40 +243,40 @@ const getAllBookings = async (req, res) => {
     }
 };
 
-// const viewBookings = async (req, res) => {
-//     try {
-//         const { roomNumber, roomType, start, end } = req.query;
+const viewBookings = async (req, res) => {
+    try {
+        const { roomNumber, roomType, start, end } = req.query;
 
-//         let bookings = await Booking.find();
+        let bookings = await Booking.find();
 
-//         // Apply filters
-//         if (roomNumber) {
-//             bookings = bookings.filter(
-//                 (booking) => booking.roomNumber === roomNumber
-//             );
-//         }
-//         if (roomType) {
-//             bookings = bookings.filter(
-//                 (booking) => booking.roomType === roomType
-//             );
-//         }
-//         if (start) {
-//             bookings = bookings.filter(
-//                 (booking) => booking.startTime >= new Date(start)
-//             );
-//         }
-//         if (end) {
-//             bookings = bookings.filter(
-//                 (booking) => booking.endTime <= new Date(end)
-//             );
-//         }
+        // Apply filters
+        if (roomNumber) {
+            bookings = bookings.filter(
+                (booking) => booking.roomNumber === roomNumber
+            );
+        }
+        if (roomType) {
+            bookings = bookings.filter(
+                (booking) => booking.roomType === roomType
+            );
+        }
+        if (start) {
+            bookings = bookings.filter(
+                (booking) => booking.startTime >= new Date(start)
+            );
+        }
+        if (end) {
+            bookings = bookings.filter(
+                (booking) => booking.endTime <= new Date(end)
+            );
+        }
 
-//         res.json(bookings);
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ message: "Server Error" });
-//     }
-// };
+        res.json(bookings);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
 
 module.exports = {
     bookRoom,
@@ -263,6 +284,6 @@ module.exports = {
     deleteBooking,
     getRefundAmount,
     filterBookings,
-    getAllBookings,
+    getAllBookings
     // viewBookings
 };

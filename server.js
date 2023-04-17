@@ -1,7 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
 const app = express();
-const router = require("./routes/booking");
+
+// Middleware
+app.use(bodyParser.json(), bodyParser.urlencoded({ extended: true }));
+
 
 // Connect to MongoDB
 const connectionUrl = "mongodb+srv://apkharsh:apk.DEV@maincluster.19ywzbx.mongodb.net/test"
@@ -10,8 +14,11 @@ mongoose.connect(connectionUrl, {
     useUnifiedTopology: true,
 });
 
-app.use("/create", router);
+// import all routes
+const roomRoutes = require("./routes/booking.js");
 
+// now use these routes
+app.use("/api", roomRoutes);
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
