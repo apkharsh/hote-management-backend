@@ -5,8 +5,8 @@ const { createRoom, deleteRoom, getAllRooms, deleteRoomByNumber } = require('../
 
 // BASE: /api/rooms/
 router.get('/all', getAllRooms); // Search Params will be used
-router.post('/create', createRoom);
-router.delete('/delete/:id', deleteRoom);
-router.delete('/deleteByNumber/:roomNumber', deleteRoomByNumber);
+router.post('/create', createRoom); // Create a room
+router.delete('/delete/:id', deleteRoom); // delete by ID
+router.delete('/deleteByNumber/:roomNumber', deleteRoomByNumber); // delete by room number
 
 module.exports = router;
