@@ -1,7 +1,7 @@
 // In controllers/bookings.js
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
-const { get_available_rooms } = require("./Helper");
+const { get_available_rooms, send_email } = require("./Helper");
 
 // /api/bookings/create
 // COMPLETE
@@ -21,7 +21,7 @@ const bookRoom = async (req, res) => {
         if(roomNumber == null)
         {
             // Get available rooms
-            const available_rooms = await get_available_rooms(startTime, endTime, roomType);
+            let available_rooms = await get_available_rooms(startTime, endTime, roomType);
 
             if(available_rooms.length == 0)
             {
@@ -35,19 +35,19 @@ const bookRoom = async (req, res) => {
                 const roomID = available_rooms[0];
 
                 // Get the Price of the room
-                const room = Room.findById(roomID);
+                const room = await Room.findById(roomID);
                 const price = room.price;
-                const numHours = ceil((endTime - startTime) / 3600000);
+                const numHours = Math.ceil((endTime - startTime) / 3600000);
                 const totalPrice = price * numHours;
 
                 // Create a new booking
                 const booking = new Booking({
-                    roomID,
-                    username,
-                    email,
-                    startTime,
-                    endTime,
-                    totalPrice
+                    roomID: roomID,
+                    userName: username,
+                    email: email,
+                    checkInTime: startTime,
+                    checkOutTime: endTime,
+                    totalPrice: totalPrice
                 });
 
                 // Save the booking
@@ -55,6 +55,9 @@ const bookRoom = async (req, res) => {
 
                 // Populate and send the booking
                 const populated_booking = await Booking.findById(booking._id).populate("roomID");
+
+                // SEND EMAIL TO USER REGARDING THE BOOKING
+                await send_email(populated_booking);
 
                 res.status(200).json({
                     message: "Booking successful",
@@ -67,29 +70,32 @@ const bookRoom = async (req, res) => {
             // roomNumber is given, check that exact room
             
             // Get available rooms
-            const available_rooms = await get_available_rooms(startTime, endTime, roomType);
+            let available_rooms = await get_available_rooms(startTime, endTime, roomType);
 
             // get room with roomNumber
-            const room_wanted = Room.find({"roomNumber": roomNumber});
+            const room_wanted = await Room.findOne({"roomNumber": roomNumber});
 
-            if(available_rooms.includes(room_wanted._id))
+            available_rooms = available_rooms.map(room_id => room_id.toString());
+
+            if(available_rooms.includes(room_wanted._id.toString()))
             {
+
                 // Book the room
                 const roomID = room_wanted._id;
                 
                 // Get the Price of the room
                 const price = room_wanted.price;
-                const numHours = ceil((endTime - startTime) / 3600000);
+                const numHours = Math.ceil((endTime - startTime) / 3600000);
                 const totalPrice = price * numHours;
 
                 // Create a new booking
                 const booking = new Booking({
-                    roomID,
-                    username,
-                    email,
-                    startTime,
-                    endTime,
-                    totalPrice
+                    roomID: roomID,
+                    userName: username,
+                    email: email,
+                    checkInTime: startTime,
+                    checkOutTime: endTime,
+                    totalPrice: totalPrice
                 });
                 
                 // Save the booking
@@ -97,6 +103,9 @@ const bookRoom = async (req, res) => {
 
                 // Populate and send the booking
                 const populated_booking = await Booking.findById(booking._id).populate("roomID");
+                
+                // SEND EMAIL TO USER REGARDING THE BOOKING
+                await send_email(populated_booking);
 
                 res.status(200).json({
                     message: "Booking successful",
@@ -201,8 +210,12 @@ const getBookings = async (req, res) => {
         {
             // Find a single booking with a bookingId
             const booking = await Booking.findById(id);
+            
+            // Populate the room
+            const populated_booking = await Booking.findById(booking._id).populate("roomID");
+
             return res.status(200).json({
-                booking
+                booking: populated_booking
             });
         }
         else
@@ -223,6 +236,12 @@ const getBookings = async (req, res) => {
             }
     
             const bookings = await Booking.find(filters);
+
+            // Populate the rooms
+            for (let i = 0; i < bookings.length; i++) {
+                const populated_booking = await Booking.findById(bookings[i]._id).populate("roomID");
+                bookings[i] = populated_booking;
+            }
     
             return res.status(200).json({
                 bookings
