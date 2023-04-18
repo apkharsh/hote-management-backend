@@ -46,12 +46,26 @@ const get_available_rooms = async (start_time, end_time, type_preference=null) =
 }
 
 
+const unix_time_to_date = (unix_time) => {
+    
+    const date = new Date(unix_time);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = "0" + date.getMinutes();
+    const seconds = "0" + date.getSeconds();
+
+    return `${day}/${month}/${year} ${hours}:${minutes.substring(minutes.length - 2)}:${seconds.substring(seconds.length - 2)}`;
+}
+
+
 const send_email = async (booking) => {
 
     const email = booking.email;
     const userName = booking.userName;
-    const checkInTime = booking.checkInTime;
-    const checkOutTime = booking.checkOutTime;
+    const checkInTime = unix_time_to_date(booking.checkInTime);
+    const checkOutTime = unix_time_to_date(booking.checkOutTime);
     const roomNumber = booking.roomID.roomNumber;
 
     console.log("Sending email to: ", email);

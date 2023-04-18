@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const bookingRoutes = require("./routes/bookingRoutes.js");
 const roomRoutes = require("./routes/roomRoutes.js");
-const colors = require("colors");
 
 const app = express();
 
