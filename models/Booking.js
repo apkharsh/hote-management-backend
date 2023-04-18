@@ -4,6 +4,10 @@ const mongoose = require("mongoose");
 const moment = require("moment");
 
 const bookingSchema = new mongoose.Schema({
+    roomNumber: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref:"Room",
+    },
     email: {
         type: String,
         required: true,
@@ -11,10 +15,6 @@ const bookingSchema = new mongoose.Schema({
     roomType: {
         type: String,
         enum: ["A", "B", "C"],
-        required: true,
-    },
-    date: {
-        type: Date,
         required: true,
     },
     startTime: {
@@ -111,29 +111,11 @@ bookingSchema.statics.isRoomAvailable = async function (
     });
 
     if (overlappingBooking) {
+        // now we need to check date as well
+
         return false; // room is not available for the requested time period
     }
-
-    // Check if there are any bookings for the same room type on the requested date
-    // const date = moment(startTime).format("YYYY-MM-DD");
-    const bookingsForDate = await this.find({ roomType, date });
-
-    for (let i = 0; i < bookingsForDate.length; i++) {
-        const existingBooking = bookingsForDate[i];
-        // check if the requested time period clashes with an existing booking on the same date
-        if (
-            (startTime >= existingBooking.startTime &&
-                startTime < existingBooking.endTime) ||
-            (endTime > existingBooking.startTime &&
-                endTime <= existingBooking.endTime) ||
-            (startTime <= existingBooking.startTime &&
-                endTime >= existingBooking.endTime)
-        ) {
-            return false; // room is not available for the requested time period
-        }
-    }
-
-    return true; // room is available for the requested time period
+    return true;
 };
 
 const Booking = mongoose.model("Booking", bookingSchema);

@@ -14,11 +14,11 @@ const roomSchema = new mongoose.Schema({
         required: true,
     },
     startTime: {
-        type: Date,
+        type: Number,
         required: true,
     },
     endTime: {
-        type: Date,
+        type: Number,
         required: true,
     },
 });

@@ -1,68 +1,101 @@
 // In controllers/bookings.js
 
 const Booking = require("../models/Booking");
+const Room = require("../models/Room");
 
 // bookRoom route is working fine
 const bookRoom = async (req, res) => {
-    const { email, roomType, date, startTime, endTime } = req.body;
+    const { email, roomType, startDate, endDate, startTime, endTime } =
+        req.body;
 
-    // Check if the requested room is available for the requested time period
-    const isAvailable = await Booking.isRoomAvailable(
-        roomType,
-        date,
-        startTime,
-        endTime
-    );
+    // const isAvailable = await Booking.isRoomAvailable(
+    //     roomType,
+    //     date: Math.floor(date.getTime() / 1000),
+    //     startTime: Math.floor(startTime.getTime() / 1000),
+    //     endTime: Math.floor(endTime.getTime() / 1000)
+    // );
+    
+    // Combine the start date and time into a single string in ISO format
+    const startDateTimeStr = `${startDate}T${startTime}`;
+    const endDateTimeStr = `${endDate}T${endTime}`;
 
-    console.log(req.body)
-    console.log('bhai yha tak to phochgye')
+    // now convert startDateTimeStr, endDateTimeStr into unix time in seconds
+    const startDateTime = new Date(startDateTimeStr);
+    const endDateTime = new Date(endDateTimeStr);
 
-    if (!isAvailable) {
-        return res.status(400).json({
-            error: "The requested room is not available for the requested time period",
-        });
-    }
+    // Get the Unix time (in milliseconds) for the start date/time
+    const startUnixTime = startDateTime.getTime();
+    const endUnixTime = endDateTime.getTime();
+
+    // print type of startUnixTime and endUnixTime
+    // these are stored in milliseconds and in number format
+    console.log(startUnixTime);
+    console.log(endUnixTime);
+
+
+    console.log("time ends herre");
+
+    const responseArr = await Booking.find({
+        $and: [
+            { startTime: { $lte: startUnixTime } },
+            { endTime: { $gte: endUnixTime } },
+        ],
+        // $and: [
+        //     { startTime: { $gte: startUnixTime } },
+        //     { endTime: { $lte: endUnixTime } },
+        // ],
+    });
+
+    console.log("Bookings finids=>", responseArr);
+
+    console.log(req.body);
+    console.log("bhai yha tak to phochgye");
+
+    // if (!isAvailable) {
+    //     return res.status(400).json({
+    //         error: "The requested room is not available for the requested time period",
+    //     });
+    // }
 
     // Calculate the total price based on the room type and duration
-    const duration = (endTime - startTime) / 3600000; // convert milliseconds to hours
-    let price;
-    switch (roomType) {
-        case "A":
-            price = duration * 100;
-            break;
-        case "B":
-            price = duration * 80;
-            break;
-        case "C":
-            price = duration * 50;
-            break;
-        default:
-            return res.status(400).json({ error: "Invalid room type" });
-    }
+    // const duration = (endUnixTime - startUnixTime) / 3600000; // convert milliseconds to hours
+    // let price;
+    // switch (roomType) {
+    //     case "A":
+    //         price = duration * 100;
+    //         break;
+    //     case "B":
+    //         price = duration * 80;
+    //         break;
+    //     case "C":
+    //         price = duration * 50;
+    //         break;
+    //     default:
+    //         return res.status(400).json({ error: "Invalid room type" });
+    // }
 
     // Create a new booking model
 
-    const booking = new Booking({
-        email: email,
-        roomType: roomType,
-        date: date,
-        startTime: startTime,
-        endTime: endTime,
-        totalPrice: price,
-    });
+    // const booking = new Booking({
+    //     email: email,
+    //     roomType: roomType,
+    //     startTime: startUnixTime,
+    //     endTime: endUnixTime,
+    //     totalPrice: price,
+    // });
 
-    console.log(booking)
-    console.log("end of book room")
+    // console.log(booking);
+    // console.log("end of book room");
 
-    try {
-        await booking.save();
-        res.status(201).json({
-            message: "Booking created successfully",
-            booking,
-        });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
+    // try {
+    //     await booking.save();
+    //     res.status(201).json({
+    //         message: "Booking created successfully",
+    //         booking,
+    //     });
+    // } catch (error) {
+    //     res.status(400).json({ error: error.message });
+    // }
 };
 
 const updateBooking = async (req, res) => {
@@ -151,16 +184,19 @@ const deleteBooking = async (req, res, next) => {
         }
 
         const startTime = new Date(booking.startTime);
-        const currentTime = now.getTime();
+        const currentTime = new Date().getTime();
         const bookingDate = new Date(booking.date);
         const Today = new Date();
 
-        
-        if(bookingDate < Today){
-            return res.status(400).json({ error: "Cannot cancel past bookings" });
+        console.log("bookingDate " + bookingDate);
+
+        if (bookingDate < Today) {
+            return res
+                .status(400)
+                .json({ error: "Cannot cancel past bookings loop1" });
         }
 
-        if (startTime > now) {
+        if (startTime > currentTime) {
             const refundAmount = getRefundAmount(
                 startTime,
                 booking.endTime,
@@ -177,7 +213,7 @@ const deleteBooking = async (req, res, next) => {
         } else {
             return res
                 .status(400)
-                .json({ error: "Cannot cancel past bookings" });
+                .json({ error: "Cannot cancel past bookings loop2" });
         }
     } catch (error) {
         console.log(error);
@@ -209,7 +245,7 @@ const filterBookings = async (req, res) => {
 
 // this is working
 const getAllBookings = async (req, res) => {
-    console.log("get all bookings")
+    console.log("get all bookings");
     try {
         const { roomType, roomNumber, startDate, endDate } = req.query;
 
@@ -284,6 +320,6 @@ module.exports = {
     deleteBooking,
     getRefundAmount,
     filterBookings,
-    getAllBookings
+    getAllBookings,
     // viewBookings
 };
