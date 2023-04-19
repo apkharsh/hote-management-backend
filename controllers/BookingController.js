@@ -128,6 +128,7 @@ const bookRoom = async (req, res) => {
 // /api/bookings/update/:id
 // TODO. beta mode
 const updateBooking = async (req, res) => {
+    
     const { email, username, startTime, endTime, roomNumber } = req.body;
     
     // Get the booking with the given id

@@ -16,9 +16,12 @@ app.use("/api/rooms/", roomRoutes);
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
 db.once("open", () => console.log("Connected to MongoDB!"));
 
-// TEST PURPOSES
-app.get("/", (req, res) => {
-    res.send("Hello World!");
+// CLEAR DB
+app.get("/api/clear", async (req, res) => {
+    await db.dropDatabase();
+    res.status(200).json({
+        message: "Database cleared",
+    });
 });
 
 // Start the server
