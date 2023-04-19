@@ -6,8 +6,7 @@ const { get_available_rooms, send_email } = require("./Helper");
 // /api/bookings/create
 // COMPLETE
 const bookRoom = async (req, res) => {
-    const { username, email, roomType, startTime, endTime, roomNumber } =
-        req.body;
+    const { username, email, roomType, startTime, endTime, roomNumber } = req.body;
 
     if (!username || !email || !roomType || !startTime || !endTime) {
         return res.status(400).json({
@@ -128,6 +127,7 @@ const bookRoom = async (req, res) => {
 // TODO. beta mode
 const updateBooking = async (req, res) => {
     const { email, username, startTime, endTime, roomNumber } = req.body;
+    
     // Get the booking with the given id
     // Check if the booking exists
     const { id } = req.params;
@@ -140,14 +140,19 @@ const updateBooking = async (req, res) => {
         return res.status(400).json({
             error: "Booking not found",
         });
+<<<<<<< HEAD
     } else {
+=======
+    }
+    else {
+>>>>>>> 241801df5e0a00730a7d7af1b0420e8372af7869
         // if booking is found check which fields are changed
         var changes = {
             email: booking.email,
             userName: booking.userName,
             startTime: booking.checkInTime,
             endTime: booking.checkOutTime,
-            // roomNumber: booking.roomID.roomNumber,
+            // roomNumber: booking.roomID.roomNumber
         };
 
         if (email != null) {
@@ -168,6 +173,7 @@ const updateBooking = async (req, res) => {
         // }
 
         console.log(changes);
+
         // first delete the current room and then check the available_rooms for the new changes
         await Booking.findByIdAndDelete(id);
 
@@ -185,7 +191,9 @@ const updateBooking = async (req, res) => {
             return res.status(400).json({
                 error: "No rooms available",
             });
-        } else {
+        } 
+        else {
+            
             // now create a new booking with the new changes
             const roomID = available_rooms[0];
 
@@ -224,6 +232,7 @@ const updateBooking = async (req, res) => {
 // /api/bookings/delete/:id
 // COMPLETE
 const deleteBooking = async (req, res) => {
+
     const { id } = req.params;
 
     try {

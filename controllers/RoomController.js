@@ -53,6 +53,7 @@ const createRoom = async (req, res) => {
 // api/rooms/delete/:id
 // COMPLETE
 const deleteRoom = async (req, res) => {
+    
     const roomID = req.params.id;
 
     // Check if there is a room with the given ID
@@ -79,6 +80,7 @@ const deleteRoom = async (req, res) => {
 // api/rooms/delete_by_number/:roomNumber
 // COMPLETE
 const deleteRoomByNumber = async (req, res) => {
+
     const roomNumber = req.params.roomNumber;
 
     // Check if there is a room with the given room number
