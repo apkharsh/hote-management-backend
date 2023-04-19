@@ -140,12 +140,8 @@ const updateBooking = async (req, res) => {
         return res.status(400).json({
             error: "Booking not found",
         });
-<<<<<<< HEAD
-    } else {
-=======
     }
     else {
->>>>>>> 241801df5e0a00730a7d7af1b0420e8372af7869
         // if booking is found check which fields are changed
         var changes = {
             email: booking.email,
