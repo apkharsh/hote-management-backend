@@ -33,8 +33,6 @@ bookingSchema.methods.getRefund = function () {
 
     var remaining_time = this.checkInTime - curr_time;
 
-    console.log(remaining_time);
-
     var remaining_hours = remaining_time / 3600000;
 
     if (remaining_hours >= 48) {
