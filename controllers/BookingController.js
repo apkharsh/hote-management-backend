@@ -9,7 +9,7 @@ const bookRoom = async (req, res) => {
     
     const { username, email, roomType, startTime, endTime, roomNumber } = req.body;
 
-    if (!username || !email || !roomType || !startTime || !endTime) {
+    if (!username || !email || !startTime || !endTime) {
         return res.status(400).json({
             error: "Please enter all the fields",
         });
@@ -17,6 +17,13 @@ const bookRoom = async (req, res) => {
     else {
         // If room number is given, check that exact room
         if (roomNumber == null) {
+
+            if (roomType == null) {
+                return res.status(400).json({
+                    error: "Please enter a room type",
+                });
+            }
+
             // Get available rooms
             let available_rooms = await get_available_rooms(
                 startTime,
@@ -126,9 +133,9 @@ const bookRoom = async (req, res) => {
 };
 
 // /api/bookings/update/:id
-// TODO. beta mode
+// COMPLETE
 const updateBooking = async (req, res) => {
-    
+
     const { email, username, startTime, endTime, roomNumber } = req.body;
     
     // Get the booking with the given id
@@ -164,19 +171,19 @@ const updateBooking = async (req, res) => {
         }
 
         if (startTime) {
-            final_val.startTime = startTime;
+            final_val.checkInTime = startTime;
         }
         else
         {
-            final_val.startTime = booking.startTime;
+            final_val.checkInTime = booking.startTime;
         }
 
         if (endTime) {
-            final_val.endTime = endTime;
+            final_val.checkOutTime = endTime;
         }
         else
         {
-            final_val.endTime = booking.endTime;
+            final_val.checkOutTime = booking.endTime;
         }
 
         // var flag = false;
@@ -203,7 +210,7 @@ const updateBooking = async (req, res) => {
 
         // Check if this booking is possible
         // Check room availability
-        const isPossible = await checkRoomAvailability(final_val.roomID, final_val.startTime, final_val.endTime, booking._id);
+        const isPossible = await checkRoomAvailability(final_val.roomID, final_val.checkInTime, final_val.checkOutTime, booking._id);
 
         if (!isPossible) {
             return res.status(400).json({
@@ -289,10 +296,11 @@ const getRefundAmount = async (req, res) => {
 // /api/bookings/all?roomType=A&roomNumber=101&startTime=t1&endTime=t2&id='xyz'
 // COMPLETE
 const getBookings = async (req, res) => {
+    
     console.log("Find Bookings...");
 
     try {
-        const { id, roomType, roomNumber, startTime, endTime } = req.query;
+        const { id, roomType, roomNumber, startTime, endTime } = await req.query;
 
         if (id) {
             // Find a single booking with a bookingId
@@ -306,34 +314,49 @@ const getBookings = async (req, res) => {
             return res.status(200).json({
                 booking: populated_booking,
             });
-        } else {
+        } 
+        else {
+
             let filters = {};
 
-            if (roomType) {
-                filters.roomType = roomType;
-            }
-
-            if (roomNumber) {
-                filters.roomNumber = roomNumber;
-            }
-
             if (startTime && endTime) {
-                filters.startTime = { $gte: startTime };
-                filters.endTime = { $lte: endTime };
+                filters.checkInTime = { $gte: startTime };
+                filters.checkOutTime = { $lte: endTime };
             }
 
             const bookings = await Booking.find(filters);
 
+            let filtered_bookings = [];
+
             // Populate the rooms
             for (let i = 0; i < bookings.length; i++) {
+                
                 const populated_booking = await Booking.findById(
                     bookings[i]._id
                 ).populate("roomID");
-                bookings[i] = populated_booking;
+
+                // check if roomType is given
+                if (roomType != null) {
+                    // check if roomType matches
+                    if (populated_booking.roomID.roomType == roomType) {
+                        filtered_bookings.push(populated_booking);
+                    }
+                }
+
+                // check if roomNumber is given
+                if (roomNumber != null) {
+                    // check if roomNumber matches
+                    if (populated_booking.roomID.roomNumber == roomNumber) {
+                        filtered_bookings.push(populated_booking);
+                    }
+                }
+
+                if(roomType == null && roomNumber == null)
+                    filtered_bookings.push(populated_booking);
             }
 
             return res.status(200).json({
-                bookings,
+                filtered_bookings,
             });
         }
     } catch (err) {

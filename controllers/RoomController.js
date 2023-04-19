@@ -23,13 +23,18 @@ const getAllRooms = async (req, res) => {
 // api/rooms/create
 // COMPLETE
 const createRoom = async (req, res) => {
+    
     const { roomType, roomNumber, price } = req.body;
+
     if (roomType == null || roomNumber == null || price == null) {
         return res.status(400).json({
             error: "Fill all the fields",
         });
-    } else {
+    } 
+    else {
+        
         try {
+
             const room = new Room({
                 roomType: roomType,
                 roomNumber: roomNumber,
@@ -42,7 +47,9 @@ const createRoom = async (req, res) => {
                 message: "Room created successfully",
                 room,
             });
-        } catch (error) {
+
+        } catch (error) 
+        {
             res.status(400).json({
                 error: error.message,
             });
