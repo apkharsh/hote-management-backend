@@ -28,9 +28,15 @@ const bookingSchema = new mongoose.Schema({
 });
 
 bookingSchema.methods.getRefund = function () {
+
     var curr_time = new Date().getTime();
+
     var remaining_time = this.checkInTime - curr_time;
+
+    console.log(remaining_time);
+
     var remaining_hours = remaining_time / 3600000;
+
     if (remaining_hours >= 48) {
         // 100% refund
         return this.totalPrice;

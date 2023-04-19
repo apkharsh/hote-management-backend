@@ -6,7 +6,7 @@ const { bookRoom, getBookings, updateBooking, deleteBooking, getRefundAmount } =
 router.get('/all', getBookings); // Search Params will be used
 router.get('/getRefundAmount/:id', getRefundAmount);
 router.post('/create', bookRoom);
-router.patch('/update/:id', updateBooking);
+router.post('/update/:id', updateBooking);
 router.delete('/delete/:id', deleteBooking);
 
 module.exports = router;
