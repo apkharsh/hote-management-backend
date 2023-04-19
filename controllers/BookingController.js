@@ -127,7 +127,6 @@ const bookRoom = async (req, res) => {
 // /api/bookings/update/:id
 // TODO. beta mode
 const updateBooking = async (req, res) => {
-
     const { email, username, startTime, endTime, roomNumber } = req.body;
     // Get the booking with the given id
     // Check if the booking exists
@@ -141,8 +140,7 @@ const updateBooking = async (req, res) => {
         return res.status(400).json({
             error: "Booking not found",
         });
-    } 
-    else {
+    } else {
         // if booking is found check which fields are changed
         var changes = {
             email: booking.email,
@@ -180,10 +178,10 @@ const updateBooking = async (req, res) => {
             booking.roomID.roomType
         );
 
-        if(available_rooms.length == 0){
+        if (available_rooms.length == 0) {
             // if no rooms are available then revert back to the previous booking
             await Booking.create(prevBooking);
-            
+
             return res.status(400).json({
                 error: "No rooms available",
             });
@@ -195,7 +193,9 @@ const updateBooking = async (req, res) => {
             const price = prevBooking.roomID.price;
             console.log(price);
             console.log(typeof price);
-            const numHours = Math.ceil((changes.endTime - changes.startTime) / 3600000);
+            const numHours = Math.ceil(
+                (changes.endTime - changes.startTime) / 3600000
+            );
             const totalPrice = price * numHours;
 
             const newBooking = new Booking({
@@ -253,27 +253,32 @@ const deleteBooking = async (req, res) => {
 // COMPLETE
 const getRefundAmount = async (req, res) => {
     const { id } = req.params;
+    if (!id) {
+        return res.status(400).json({
+            error: "Please enter the booking ID",
+        });
+    } else {
+        try {
+            // Find the booking with the given id
+            const booking = await Booking.findById(id);
 
-    try {
-        // Find the booking with the given id
-        const booking = await Booking.findById(id);
+            if (!booking) {
+                return res.status(400).json({
+                    error: "Booking not found",
+                });
+            }
 
-        if (!booking) {
-            return res.status(400).json({
-                error: "Booking not found",
+            // Calculate the refund amount
+            const refundAmount = booking.getRefund();
+
+            res.status(200).json({
+                Refund: refundAmount,
+            });
+        } catch (error) {
+            res.status(400).json({
+                error: error.message,
             });
         }
-
-        // Calculate the refund amount
-        const refundAmount = booking.getRefund();
-
-        res.status(200).json({
-            Refund: refundAmount,
-        });
-    } catch (error) {
-        res.status(400).json({
-            error: error.message,
-        });
     }
 };
 

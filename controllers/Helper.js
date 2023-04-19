@@ -1,6 +1,9 @@
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const nodemailer = require("nodemailer");
+// use dotenv
+const dotenv = require("dotenv");
+dotenv.config();
 
 const get_available_rooms = async (
     start_time,
@@ -74,9 +77,9 @@ const send_email = async (booking) => {
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-            user: "apk.harsh.dev@gmail.com",
-            pass: "gawoyqwegkcdtvjb",
-        },
+            user: process.env.NODEMAILER_EMAIL,
+            pass: process.env.NODEMAILER_PASSWORD,
+        }
     });
 
     // Create the email
