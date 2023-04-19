@@ -354,7 +354,6 @@ const getBookings = async (req, res) => {
                 if(roomType == null && roomNumber == null)
                     filtered_bookings.push(populated_booking);
             }
-
             return res.status(200).json({
                 filtered_bookings,
             });

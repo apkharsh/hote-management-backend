@@ -4,8 +4,11 @@ const bookingRoutes = require("./routes/bookingRoutes.js");
 const roomRoutes = require("./routes/roomRoutes.js");
 const db = require("./db.js");
 const app = express();
+const cors = require("cors");
+
 
 // Middleware
+app.use(cors());
 app.use(bodyParser.json(), bodyParser.urlencoded({ extended: true }));
 
 // now use these routes
