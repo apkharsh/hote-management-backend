@@ -50,6 +50,40 @@ const get_available_rooms = async (
     }
 };
 
+
+const checkRoomAvailability = async (roomID, startTime, endTime, bookingIdToIgnore=null) => {
+
+    const bookings = await Booking.find({
+        $and: [
+            { roomID: roomID },
+            { _id: { $ne: bookingIdToIgnore } },
+            {
+                $or: [
+                    {
+                        $and: [
+                            { checkInTime: { $lte: startTime } },
+                            { checkOutTime: { $gte: startTime } },
+                        ],
+                    },
+                    {
+                        $and: [
+                            { checkInTime: { $lte: endTime } },
+                            { checkOutTime: { $gte: endTime } },
+                        ],
+                    },
+                ],
+            },
+        ],
+    });
+
+    if (bookings.length == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 const unix_time_to_date = (unix_time) => {
     const date = new Date(unix_time);
     const year = date.getFullYear();
@@ -105,4 +139,5 @@ const send_email = async (booking) => {
 module.exports = {
     get_available_rooms,
     send_email,
+    checkRoomAvailability
 };
