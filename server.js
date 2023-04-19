@@ -20,9 +20,18 @@ mongoose.connect(connectionUrl, {
 app.use("/api/bookings/", bookingRoutes);
 app.use("/api/rooms/", roomRoutes);
 
-// TEST PURPOSES
-app.get("/", (req, res) => {
-    res.send("Hello World!");
+// -- TO CLEAR THE DATABASE --
+app.delete('/deleteDB', async (req, res) => {
+    try {
+        await mongoose.connection.db.dropDatabase();
+        res.status(200).json({
+            message: "Database deleted successfully",
+        });
+    } catch (error) {
+        res.status(400).json({
+            error: error.message,
+        });
+    }
 });
 
 const db = mongoose.connection;
