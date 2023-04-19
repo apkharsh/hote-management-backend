@@ -1,18 +1,20 @@
 // In controllers/bookings.js
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
-const { get_available_rooms, send_email } = require("./Helper");
+const { get_available_rooms, send_email, checkRoomAvailability } = require("./Helper");
 
 // /api/bookings/create
 // COMPLETE
 const bookRoom = async (req, res) => {
+    
     const { username, email, roomType, startTime, endTime, roomNumber } = req.body;
 
     if (!username || !email || !roomType || !startTime || !endTime) {
         return res.status(400).json({
             error: "Please enter all the fields",
         });
-    } else {
+    } 
+    else {
         // If room number is given, check that exact room
         if (roomNumber == null) {
             // Get available rooms
@@ -133,8 +135,7 @@ const updateBooking = async (req, res) => {
     // Check if the booking exists
     const { id } = req.params;
 
-    const booking = await Booking.findById(id);
-    const prevBooking = booking;
+    const booking = await Booking.findById(id).populate("roomID");
 
     // if booking not found on that id
     if (!booking) {
@@ -143,84 +144,83 @@ const updateBooking = async (req, res) => {
         });
     }
     else {
-        // if booking is found check which fields are changed
-        var changes = {
-            email: booking.email,
-            userName: booking.userName,
-            startTime: booking.checkInTime,
-            endTime: booking.checkOutTime,
-            // roomNumber: booking.roomID.roomNumber
-        };
 
-        if (email != null) {
-            changes.email = email;
+        let final_val = {};
+        
+        if (email) {
+            final_val.email = email;
         }
-        if (username != null) {
-            changes.userName = username;
-        }
-        if (startTime != null) {
-            changes.startTime = startTime;
-        }
-        if (endTime != null) {
-            changes.endTime = endTime;
+        else
+        {
+            final_val.email = booking.email;
         }
 
-        // if (roomNumber != null) {
-        //     changes.newRoomNumber = roomNumber;
-        // }
+        if (username) {
+            final_val.userName = username;
+        }
+        else
+        {
+            final_val.userName = booking.userName;
+        }
 
-        console.log(changes);
+        if (startTime) {
+            final_val.startTime = startTime;
+        }
+        else
+        {
+            final_val.startTime = booking.startTime;
+        }
 
-        // first delete the current room and then check the available_rooms for the new changes
-        await Booking.findByIdAndDelete(id);
+        if (endTime) {
+            final_val.endTime = endTime;
+        }
+        else
+        {
+            final_val.endTime = booking.endTime;
+        }
 
-        // now check the available_rooms for the new changes
-        let available_rooms = await get_available_rooms(
-            changes.startTime,
-            changes.endTime,
-            booking.roomID.roomType
-        );
+        // var flag = false;
 
-        if(available_rooms.length == 0){
-            // if no rooms are available then revert back to the previous booking
-            await Booking.create(prevBooking);
+        if (roomNumber) {
+            // Find Room ID
+            const room = await Room.findOne({ roomNumber: roomNumber });
             
+            if (!room) {
+                // flag = true;                
+                return res.status(400).json({
+                    error: "Room not found",
+                });
+            }
+            else
+            {
+                final_val.roomID = room._id;
+            }
+        }
+        else
+        {
+            final_val.roomID = booking.roomID;
+        }
+
+        // Check if this booking is possible
+        // Check room availability
+        const isPossible = await checkRoomAvailability(final_val.roomID, final_val.startTime, final_val.endTime, booking._id);
+
+        if (!isPossible) {
             return res.status(400).json({
-                error: "No rooms available",
+                error: "Room not available",
             });
-        } 
-        else {
-            
-            // now create a new booking with the new changes
-            const roomID = available_rooms[0];
-
-            // Get the Price of the room
-            const price = prevBooking.roomID.price;
-            console.log(price);
-            console.log(typeof price);
-            const numHours = Math.ceil((changes.endTime - changes.startTime) / 3600000);
-            const totalPrice = price * numHours;
-
-            const newBooking = new Booking({
-                roomID: roomID,
-                userName: changes.userName,
-                email: changes.email,
-                checkInTime: changes.startTime,
-                checkOutTime: changes.endTime,
-                totalPrice: totalPrice,
-            });
-
-            // Save the booking
-            // await newBooking.save();
-            // // Populate and send the booking
-
-            // // send email to the user regarding the booking
-            // await send_email(newBooking);
-            // return res.status(200).json({
-            //     message: "Booking updated successfully",
-            //     booking: newBooking,
-            // });
         }
+
+        // Update the booking
+        await Booking.findByIdAndUpdate(id, final_val);
+
+        // Populate and send the booking
+        const populated_booking = await Booking.findById(id).populate("roomID");
+
+        return res.status(200).json({
+            message: "Booking updated successfully",
+            booking: populated_booking,
+        });
     }
 };
 
